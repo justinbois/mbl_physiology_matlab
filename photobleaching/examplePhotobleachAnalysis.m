@@ -1,5 +1,5 @@
 % Specify parameters
-t = linspace(0, 60, 61);
+t = 0:60;
 IbgFake = 70;
 sigmaFake = 10;
 nuFake = 10;

@@ -1,12 +1,12 @@
 % What we know about our files/strains
 parentDir = '2016-05-13_tal_dryrun';
 autoPrefix = 'Auto';
-strains = {'Delta', 'WT', 'RBS1027', 'RBS1147', 'RBS1', 'RBS446'};
+strains = {'Delta', 'WT', 'RBS1147', 'RBS446', 'RBS1027', 'RBS1'};
 intensityChannel = 'FITC';
 segChannel = 'TRITC';
 phaseChannel = 'Brightfield';
-nRepressors = [0, 11, 30, 62, 130, 200];
-areaRange = [200, 700];
+nRepressors = [0, 11, 30, 62, 130, 610];
+areaRange = [300, 800];
 eccentricityRange = [0.8, 1];
 
 % Directories that contain autofluorescence data
@@ -27,7 +27,8 @@ for i = 1:length(strains)
 end %for
 
 % Acquire autofluorescence data
-autoIntInt = [];
+totalAutoIntensity = 0;
+totalArea = 0;
 for i = 1:length(autoDirs)
     intensityFile = dir(strcat(autoDirs{i}, '/*', intensityChannel, '*.tif'));
     intensityFile = fullfile(autoDirs{i}, intensityFile.name);
@@ -44,11 +45,21 @@ for i = 1:length(autoDirs)
     imSeg = medfilt2(imSeg);
     imInt = medfilt2(imInt);
 
-    autoIntInt = [autoIntInt, integratedIntensities(imSeg, imInt, 12, false, ...
-                                            areaRange, eccentricityRange)];
-end %for
+    % Get region props for auto fluorescance
+    props = getProps(imSeg, imInt, false);
+    props = filterProps(props, areaRange, eccentricityRange);
 
-% Acquire autofluorescence data
+    % Compute mean autointensity and area
+    for j = 1:length(props)
+        totalAutoIntensity = totalAutoIntensity + ...
+                    props(i).MeanIntensity * props(i).Area;
+        totalArea = totalArea + props(i).Area;
+    end %for
+end %for
+meanAutoIntensity = totalAutoIntensity / totalArea;
+
+
+% Acquire fluorescence data from gene expression
 strainsIntInt = cell(length(strains), 1);
 for i = 1:length(strains)
     intInt = [];
@@ -69,8 +80,15 @@ for i = 1:length(strains)
         imSeg = medfilt2(imSeg);
         imInt = medfilt2(imInt);
 
-        intInt = [intInt, integratedIntensities(imSeg, imInt, 12, false, ...
-                                                areaRange, eccentricityRange)];
+        intInt = [intInt, integratedIntensities(imSeg, imInt, ...
+                    meanAutoIntensity, false, areaRange, eccentricityRange)];
     end %for
     strainsIntInt{i} = intInt;
+end %for
+
+
+% Write result to CSV files
+for i = 1:length(strains)
+    fname = sprintf('%s_dryrun_intensities.csv', strains{i});
+    csvwrite(fname, (strainsIntInt{i})');
 end %for

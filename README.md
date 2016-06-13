@@ -6,5 +6,7 @@ The `gene_expression` module contains code to process a stack of images acquired
 
 The `ecoli_growth` module contains analysis of an *E. coli* growth movie obtained by Muir Morrison at Caltech.  The raw images can be obtained [here](http://bois.caltech.edu/bootcamp/2016-04-03-muir_dryrun.zip).  A CSV file of the resulting time points and areas may be found [here](http://bois.caltech.edu/bootcamp/ecoli_growth.csv).
 
+The `photobleaching` module was considered, but eventually not used in the bootcamp.
+
 ## License
 (c) 2016 Justin Bois and co-contributers to this repository. The work in this repository is licensed under a [Creative Commons Attribution License CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).  All code is licensed under [MIT license](https://opensource.org/licenses/MIT).

@@ -5,7 +5,6 @@ strains = {'Delta', 'WT', 'RBS1147', 'RBS446', 'RBS1027', 'RBS1'};
 intensityChannel = 'FITC';
 segChannel = 'TRITC';
 phaseChannel = 'Brightfield';
-nRepressors = [0, 11, 30, 62, 130, 610];
 areaRange = [300, 800];
 eccentricityRange = [0.8, 1];
 
@@ -27,17 +26,13 @@ for i = 1:length(strains)
 end %for
 
 % Acquire autofluorescence data
-totalAutoIntensity = 0;
-totalArea = 0;
+autoIntInt = [];
 for i = 1:length(autoDirs)
     intensityFile = dir(strcat(autoDirs{i}, '/*', intensityChannel, '*.tif'));
     intensityFile = fullfile(autoDirs{i}, intensityFile.name);
     segFile = dir(strcat(autoDirs{i}, '/*', segChannel, '*.tif'));
     segFile = fullfile(autoDirs{i}, segFile.name);
-    phaseFile = dir(strcat(autoDirs{i}, '/*', phaseChannel, '*.tif'));
-    phaseFile = fullfile(autoDirs{i}, phaseFile.name);
 
-    imPhase = imread(phaseFile);
     imSeg = imread(segFile);
     imInt = imread(intensityFile);
 
@@ -49,14 +44,13 @@ for i = 1:length(autoDirs)
     props = getProps(imSeg, imInt, false);
     props = filterProps(props, areaRange, eccentricityRange);
 
-    % Compute mean autointensity and area
-    for j = 1:length(props)
-        totalAutoIntensity = totalAutoIntensity + ...
-                    props(i).MeanIntensity * props(i).Area;
-        totalArea = totalArea + props(i).Area;
-    end %for
+    autoIntInt = [autoIntInt, integratedIntensities(imSeg, imInt, ...
+                                0, false, areaRange, eccentricityRange)];
 end %for
-meanAutoIntensity = totalAutoIntensity / totalArea;
+
+% Write to CSV file
+fname = sprintf('auto_dryrun_intensities.csv');
+csvwrite('auto_dryrun_intensities.csv', autoIntInt');
 
 
 % Acquire fluorescence data from gene expression
@@ -69,10 +63,7 @@ for i = 1:length(strains)
         intensityFile = fullfile(expDirs{i}{j}, intensityFile.name);
         segFile = dir(strcat(expDirs{i}{j}, '/*', segChannel, '*.tif'));
         segFile = fullfile(expDirs{i}{j}, segFile.name);
-        phaseFile = dir(strcat(expDirs{i}{j}, '/*', phaseChannel, '*.tif'));
-        phaseFile = fullfile(expDirs{i}{j}, phaseFile.name);
 
-        imPhase = imread(phaseFile);
         imSeg = imread(segFile);
         imInt = imread(intensityFile);
 
@@ -81,7 +72,7 @@ for i = 1:length(strains)
         imInt = medfilt2(imInt);
 
         intInt = [intInt, integratedIntensities(imSeg, imInt, ...
-                    meanAutoIntensity, false, areaRange, eccentricityRange)];
+                                 0, false, areaRange, eccentricityRange)];
     end %for
     strainsIntInt{i} = intInt;
 end %for
